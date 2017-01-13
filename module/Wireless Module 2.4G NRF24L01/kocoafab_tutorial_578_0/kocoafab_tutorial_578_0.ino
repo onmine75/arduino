@@ -6,23 +6,21 @@
 
 #include <SPI.h>
 #include "RF24.h"
-#include "printf.h"
 
-// Set this radio as radio number 0(receiv) or 1(send)
+// Set this radio as radio number 0 or 1
 bool radioNumber = 0;
 // Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins 7 & 8
 RF24 radio(9, 10);
 
-const uint64_t addresses[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+byte addresses[][6] = {"1Node", "2Node"};
 
-
+unsigned long wait_time = 0;
 // Used to control whether this node is sending or receiving
 bool role = 0;
 
-void setup() {
-  Serial.begin(9600);
-  printf_begin();
 
+void setup() {
+  Serial.begin(115200);
   Serial.println(F("RF24/examples/GettingStarted"));
   Serial.println(F("*** PRESS 'T' to begin transmitting to the other node"));
 
@@ -33,38 +31,36 @@ void setup() {
   radio.setPALevel(RF24_PA_LOW);
 
   // Open a writing and reading pipe on each radio, with opposite addresses
+  Serial.print("radioNumber:");
+  Serial.println(radioNumber);
   if (radioNumber) {
-    Serial.println("send mode!!");
-    radio.openWritingPipe(addresses[1]);
-    radio.openReadingPipe(1, addresses[0]);
+    radio.openWritingPipe((uint64_t)addresses[1]);
+    radio.openReadingPipe(1, (uint64_t)addresses[0]);
   } else {
-    Serial.println("receive mode!!");
-    radio.openWritingPipe(addresses[0]);
-    radio.openReadingPipe(1, addresses[1]);
+    radio.openWritingPipe((uint64_t)addresses[0]);
+    radio.openReadingPipe(1, (uint64_t)addresses[1]);
   }
 
   // Start the radio listening for data
   radio.startListening();
-
-  delay(1000);
-  radio.printDetails();
 }
 
 void loop() {
 
   // Ping Out Role
   if (role == 1) {
-    Serial.println("send mode");
     // First, stop listening so we can talk.
     radio.stopListening();
     Serial.println(F("Now sending"));
 
     // Take the time, and send it.  This will block until complete
     unsigned long time = micros();
+    Serial.print(F("role 1, send data="));
+    Serial.println(time);
     if (!radio.write( &time, sizeof(unsigned long) )) {
       Serial.println(F("failed"));
     }
-  Serial.println(F("startListening"));
+
     // Now, continue listening
     radio.startListening();
 
@@ -76,12 +72,16 @@ void loop() {
     // While nothing is received
     while ( ! radio.available() ) {
       // If waited longer than 200ms, indicate timeout and exit while loop
-      if (micros() - started_waiting_at > 200000 ) {
+      wait_time = micros() - started_waiting_at;
+      if (wait_time > 200000 ) {
         timeout = true;
         break;
       }
     }
-
+  Serial.print(F("wait time="));
+  Serial.print(wait_time);
+  Serial.print(F(" msec="));
+  Serial.println(wait_time/1000);
     // Describe the results
     if ( timeout ) {
       Serial.println(F("Failed, response timed out."));
@@ -92,7 +92,7 @@ void loop() {
       unsigned long time = micros();
 
       // Spew it
-      Serial.print(F("Sent "));
+      Serial.print(F("role 1, Sent "));
       Serial.print(time);
       Serial.print(F(", Got response "));
       Serial.print(got_time);
@@ -120,15 +120,13 @@ void loop() {
       // First, stop listening so we can talk
       radio.stopListening();
       // Send the final one back.
+      Serial.print(F("role 0, send data="));
+      Serial.println(got_time);
       radio.write( &got_time, sizeof(unsigned long) );
       // Now, resume listening so we catch the next packets.
       radio.startListening();
-      Serial.print(F("Sent response "));
+      Serial.print(F("role 0, Sent response "));
       Serial.println(got_time);
-    }else
-    {
-      Serial.println("receive mode, but not avaiable");
-      delay(1000);
     }
   }
 
@@ -139,7 +137,7 @@ void loop() {
       Serial.println(F("*** CHANGING TO TRANSMIT ROLE -- PRESS 'R' TO SWITCH BACK"));
       // Become the primary transmitter (ping out)
       role = 1;
-      
+
     } else {
       if ( c == 'R' && role == 1 ) {
         Serial.println(F("*** CHANGING TO RECEIVE ROLE -- PRESS 'T' TO SWITCH BACK"));
@@ -150,4 +148,3 @@ void loop() {
     }
   }
 }
-
