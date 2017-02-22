@@ -1,63 +1,98 @@
-#include <VirtualWire.h>
+/*
+  Getting Started example sketch for nRF24L01+ radios
+  This is a very basic example of how to send data from one node to another
+  Updated: Dec 2014 by TMRh20
+*/
 
 #include <SPI.h>
-#include "RF24.h"                                                                       
+#include "RF24.h"
 
-#include <SoftwareServo.h>
-
-
-const int AIA = 5;
-const int AIB = 6;
-
-const int BIA = 7;  // PWM
-const int BIB = 8;  // PWM
-
-byte addresses[][6] = {"1Node", "2Node"};
-
-const byte PIN_BUTTON_SELECT = 8;
-
-const byte PIN_BUTTON_F = 7;
-const byte PIN_BUTTON_E = 6;
-
-const byte PIN_BUTTON_RIGHT = 3;
-const byte PIN_BUTTON_UP = 2;
-const byte PIN_BUTTON_DOWN = 4;
-const byte PIN_BUTTON_LEFT = 5;
-
-const byte PIN_ANALOG_X = 0;
-const byte PIN_ANALOG_Y = 1;
-
-byte speed = 255;  // change this (0-255) to control the speed of the motors
-unsigned long time;
-
-// Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins 7 & 8
+#include <Servo.h>
+//////////////////////////////////
+// RF
 RF24 radio(9, 10);
+byte addresses[][6] = {"1Node", "2Node"};
+char buffer[1024];
+long time;
 ///////////////////////////////////////////////
-SoftwareServo myservo;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
-
+// Servo
+Servo myservo;  // create servo object to control a servo
 int pos = 0;    // variable to store the servo position
+
 ///////////////////////////////////////////////
-void forward(byte speed)
+// DC Motor
+const int AIA = 4;
+const int AIB = 5;
+
+const int BIA = 6;
+const int BIB = 7;
+
+///////////////////////////////////////////////
+void setup_rf() {
+  Serial.println("RECEIVE ROLE");
+  radio.begin();
+  radio.setPALevel(RF24_PA_LOW);
+  radio.openWritingPipe((uint64_t)addresses[1]);
+  radio.openReadingPipe(1, (uint64_t)addresses[0]);
+  radio.startListening();
+}
+
+void loop_rf() {
+  // Now, continue listening
+  radio.startListening();
+
+  if (radio.available())
+  {
+    int size = radio.getPayloadSize();
+    //radio.read( buffer, size );
+    //    Serial.print("size =");
+    //    Serial.print(size);
+    //    Serial.print(", data=");
+    //    Serial.println(buffer);
+    radio.read( &time, 4 );
+    Serial.println(time);
+  }
+}
+///////////////////////////////////////////////
+void setup_servo() {
+  myservo.attach(3);  // attaches the servo on pin 9 to the servo object
+}
+
+void loop_servo(int angle) {
+  Serial.print("loop_servo angle=");
+  Serial.println(angle);
+  myservo.write(angle);
+  delay(15);
+}
+///////////////////////////////////////////////
+void setup_motor() {
+  Serial.println("L9110S setup");
+
+  pinMode(AIA, OUTPUT);
+  pinMode(AIB, OUTPUT);
+  pinMode(BIA, OUTPUT);
+  pinMode(BIB, OUTPUT);
+  stop();
+}
+
+void forward()
 {
-  Serial.print("forward speed=");
-  Serial.println(speed);
-  analogWrite(AIA, speed);
+  Serial.println("forward");
+  digitalWrite(AIA, HIGH);
   digitalWrite(AIB, LOW);
 
-  analogWrite(BIA, speed);
+  digitalWrite(BIA, HIGH);
   digitalWrite(BIB, LOW);
 
 }
-void backward(byte speed)
+void backward()
 {
-  Serial.print("backward speed=");
-  Serial.println(speed);
+  Serial.println("backward");
   digitalWrite(AIA, LOW);
-  analogWrite(AIB, speed);
+  digitalWrite(AIB, HIGH);
 
   digitalWrite(BIA, LOW);
-  analogWrite(BIB, speed);
+  digitalWrite(BIB, HIGH);
 
 }
 void stop()
@@ -71,78 +106,44 @@ void stop()
 
 }
 
-///
 ///////////////////////////////////////////////
-void setup_l9110s()
-{
-  Serial.println("vw_rx_start");
-  pinMode(AIA, OUTPUT);
-  pinMode(AIB, OUTPUT);
-  stop();
-
-}
-/*
-  Getting Started example sketch for nRF24L01+ radios
-  This is a very basic example of how to send data from one node to another
-  Updated: Dec 2014 by TMRh20
-*/
-void setup_NRF24L01() {
-  Serial.println("RECEIVE ROLE");
-
-  radio.begin();
-
-  // Set the PA Level low to prevent power supply related issues since this is a
-  // getting_started sketch, and the likelihood of close proximity of the devices. RF24_PA_MAX is default.
-  radio.setPALevel(RF24_PA_LOW);
-
-  // Open a writing and reading pipe on each radio, with opposite addresses
-  radio.openWritingPipe((uint64_t)addresses[1]);
-  radio.openReadingPipe(1, (uint64_t)addresses[0]);
-
-  // Start the radio listening for data
-  radio.startListening();
-}
-void setup()
-{
+void setup() {
   Serial.begin(9600);
-
-  //setup_l9110s();
-  setup_NRF24L01();
-
-    myservo.attach(3);  // attaches the servo on pin 9 to the servo object
+  setup_rf();
+  setup_servo();
+  setup_motor();
+  
+  loop_servo(90);
+  stop();
 }
-unsigned char buffer[32];
+char value;
+int count = 0;
 void loop() {
-  // Now, continue listening
-  radio.startListening();
-
-  if (radio.available())
-  {
-    radio.read( buffer, 32 );
-    for (int i = 0; i <= 9; i++)
+  if (Serial.available()) {
+    value = Serial.read();
+    if (value >= '0' && value <= '9')
     {
-      Serial.print(buffer[i], HEX);
-      Serial.print(" ");
-    }
-    Serial.println(" ");
-
-    if (buffer[PIN_BUTTON_UP] == 1) {
-      stop();
-    } else {
-      forward(255);
-    }
-    if (buffer[PIN_BUTTON_RIGHT] == 1){
-      Serial.println("server 180");
-      myservo.write(180);
-      delay(15);
-      SoftwareServo::refresh();
+      value -= '0';
+      pos = map((int)value, 0, 9, 0, 180);
+      Serial.print("value=");
+      Serial.print(value, DEC);
+      Serial.print(", pos=");
+      Serial.println(pos);
+      loop_servo(pos);
     }else
     {
-      Serial.println("server 0");
-      myservo.write(0);
-      delay(15);
-      SoftwareServo::refresh();
+      if (value == 'f')
+      {
+        forward();
+      }else if(value == 'b')
+      {
+        backward();
+      }else if(value == 's')
+      {
+        stop();
+      }
     }
-
   }
+  loop_rf();
+  //loop_servo();
 }

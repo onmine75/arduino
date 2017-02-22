@@ -1,9 +1,9 @@
 
 const int AIA = 4;
-const int AIB = 7;
+const int AIB = 5;
 
-const int BIA = 9;
-const int BIB = 10;
+const int BIA = 6;
+const int BIB = 7;
 
 void setup() {
   Serial.begin(9600); // set up Serial library at 9600 bps
