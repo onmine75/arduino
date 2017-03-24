@@ -49,7 +49,7 @@ struct JoyStickMsgFormat
 };
 JoyStickMsgFormat g_joystickMsg;
 
-void printJoystick()
+void printJoystick(bool ln)
 {
   Serial.print("v:");
   Serial.print(g_joystickMsg.version);
@@ -75,8 +75,8 @@ void printJoystick()
   Serial.print(g_joystickMsg.raw_x);
   Serial.print(" raw_y:");
   Serial.print(g_joystickMsg.raw_y);
-
-  Serial.println(" ");
+  if (ln)
+    Serial.println(" ");
 }
 ///////////////////////////////////////////////
 
@@ -102,7 +102,7 @@ void loop_rf() {
     //    Serial.print(", data=");
     //    Serial.println(buffer);
     radio.read( &g_joystickMsg, sizeof(g_joystickMsg) );
-    printJoystick();
+    printJoystick(true);
   }
 }
 ///////////////////////////////////////////////
@@ -214,40 +214,41 @@ void loop_motor()
 void setup() {
   Serial.begin(9600);
   setup_rf();
-  setup_servo();
-  setup_motor();
+//  setup_servo();
+//  setup_motor();
 
   servo_set(90);
   motor_stop();
+    Serial.println("setup..end");
 }
 char value;
 int count = 0;
 void loop() {
-  //  if (Serial.available()) {
-  //    value = Serial.read();
-  //    if (value >= '0' && value <= '9')
-  //    {
-  //      value -= '0';
-  //      pos = map((int)value, 0, 9, 0, 180);
-  //      Serial.print("value=");
-  //      Serial.print(value, DEC);
-  //      Serial.print(", pos=");
-  //      Serial.println(pos);
-  //      loop_servo(pos);
-  //    }else
-  //    {
-  //      if (value == 'f')
-  //      {
-  //        forward();
-  //      }else if(value == 'b')
-  //      {
-  //        backward();
-  //      }else if(value == 's')
-  //      {
-  //        stop();
-  //      }
-  //    }
-  //  }
+//    if (Serial.available()) {
+//      value = Serial.read();
+//      if (value >= '0' && value <= '9')
+//      {
+//        value -= '0';
+//        pos = map((int)value, 0, 9, 0, 180);
+//        Serial.print("value=");
+//        Serial.print(value, DEC);
+//        Serial.print(", pos=");
+//        Serial.println(pos);
+//        //loop_servo(pos);
+//      }else
+//      {
+//        if (value == 'f')
+//        {
+//          motor_forward();
+//        }else if(value == 'b')
+//        {
+//          motor_backward();
+//        }else if(value == 's')
+//        {
+//          motor_stop();
+//        }
+//      }
+//    }
   loop_rf();
   loop_servo();
   loop_motor();
