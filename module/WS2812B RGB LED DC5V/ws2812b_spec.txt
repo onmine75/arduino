@@ -1,0 +1,24 @@
+Input voltage:.............DC5v; 
+Power:.......................30leds/m----9watt/meter
+            .......................60leds/m----18watt/meter
+            .......................144leds/m----43.2watt/meter
+LED resource:.............WS2812B led(5050 SMD RGB LED with built-in improved version of ws2811 ic)
+LED: ...............each LED is separately controlled
+IC Type: .....................improved version ws2812 IC(built inside the 5050 smd rgb led) 
+of IC: ..................(1 IC drives 1 led chip); 
+Pixels:.........                 30/60/144/meter; 
+Pitch: .........................16.6mm(1000/64); 
+Grey scale: ................256;
+Bits/color: ...................8-bits/color;
+FPC size: ....................Width: 10mm, High: 2.5mm; 
+FPC color: .........    BLACK/White
+Protection rate...... IP30/ IP65 /IP67
+Colors: ........................Full color RGB, dream color changing; 
+Cuttable:......................every LED is cuttable; 
+Package: ....................in anti-static bag,with 3M adhensive tape on the back(Except the Waterproof in SiliconTube)
+Lighting angle: 120degree
+Life time: 50,000hours
+Certification: CE & ROSH
+Warranty: 2years
+Working mode: external controller
+Connection: VCC: RED; GND:WHITE; DAT:GREEN

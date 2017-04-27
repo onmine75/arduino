@@ -1,0 +1,2 @@
+# 설치방법
+http://digistump.com/wiki/digispark/tutorials/connecting
